@@ -1,0 +1,327 @@
+---
+---
+html
+  position: relative
+  min-height: 100%
+  font-size: 18px
+
+body
+  font-family: Rubik !important
+  margin-bottom: 60px
+
+header
+  nav
+    border-bottom: 1px solid #e7e7e7
+    a.navbar-brand
+      color: #900 !important
+      font-size: 25px
+      margin-right: 50px
+    div#usc
+      padding-top: 10px !important
+      padding-bottom: 10px !important
+      img
+        height: 50px
+
+  .navbar-light .navbar-nav .nav-link
+    color: rgba(0,0,0,.7)
+    font-size: 18px
+    padding: 9px 15px
+
+main
+  padding-top: 40px
+  padding-bottom: 20px
+  h1
+    font-size: 24px
+    margin-bottom: 15px
+  h2
+    font-size: 22px
+    color: rgba(0,0,0,.7)
+    &:not(:first-of-type)
+      margin-top: 30px
+  pre
+    margin-top: 20px
+    margin-bottom: 20px
+  li
+    margin-bottom: 5px
+  p
+    margin-bottom: 10px
+  ul, ol
+    margin-bottom: 20px
+
+div.postit
+  background-color: #fcf8e3
+  padding: 20px
+  border-radius: 10px
+
+footer
+  position: absolute
+  bottom: 0
+  width: 100%
+  height: 60px
+  line-height: 60px
+  background-color: #f5f5f5
+  .container
+    padding-right: 15px
+    padding-left: 15px
+    text-align: center
+    #gh-icon-footer
+      margin-left: 10px
+      position: relative
+      top: -1px
+      fill: dimgray
+
+
+// HOME
+div#home-top > div, div#home-desc > div
+  margin-bottom: 20px
+
+@media screen and (max-width: 575px)
+  div#home-top > div
+    text-align: center
+
+img#home-logo
+  margin-bottom: 50px
+  vertical-align: middle
+  display: inline-block
+  height: 165px
+  @media screen and (min-width: 455px)
+    margin-right: 30px
+
+div#home-name
+  margin-bottom: 50px
+  width: 250px
+  vertical-align: middle
+  display: inline-block
+  font-size: 36px
+  font-weight: 500
+  line-height: 1.1
+
+div#home-desc
+  p, ul
+    font-family: "Noto Serif" !important
+    margin-bottom: .5em
+  h2
+    color: #212529
+
+// PEOPLE
+div.member
+  margin-top: 10px !important
+  margin-bottom: 30px
+  img
+    margin-right: 30px
+    height: 120px
+    width: 120px
+    border-radius: 60px
+    border: 2px solid #edebdc
+  p
+    &.member-name, &.member-role
+      font-family: Rubik, sans-serif !important
+      font-size: 20px
+      margin-bottom: 0px
+      svg
+        margin-left: 5px
+        position: relative
+        top: -2px
+    &.member-name
+      font-weight: 500
+
+// GETTING STARTED
+img.started
+  max-width: 90%
+  margin-left: auto
+  margin-right: auto
+
+// PUBLICATIONS
+p.year
+  font-family: Rubik, sans-serif !important
+  font-size: 20px
+  font-weight: 500
+
+ul.papers
+  margin-bottom: 30px
+  padding-left: 20px
+  li
+    margin-bottom: 10px
+    line-height: 1.45
+
+a.pdf, a.bib, a.arxiv
+  text-decoration: none
+  border-radius: 5px
+  border: 1px solid #007bff
+  color: #007bff
+  font-family: "Rubik", sans-serif
+  font-size: 12px
+  font-weight: 500
+  padding: 0px 3.5px 0px 3px
+  vertical-align: middle
+  position: relative
+  top: -1px
+  left: 3px
+
+a.pdf::after
+  content: "PDF"
+
+a.bib::after
+  content: "BIB"
+
+a.arxiv::after
+  content: "arXiv"
+
+.highlight, code
+  color: #424242
+  // background: #ffffff
+  .hll
+    background-color: #ffffcc
+  .c
+    color: #888888
+  .err
+    color: #FF0000
+    background-color: #FFAAAA
+  .k
+    color: #008800
+    font-weight: bold
+  .o
+    color: #333333
+  .ch, .cm
+    color: #888888
+  .cp
+    color: #557799
+  .cpf, .c1
+    color: #888888
+  .cs
+    color: #cc0000
+    font-weight: bold
+  .gd
+    color: #A00000
+  .ge
+    font-style: italic
+  .gr
+    color: #FF0000
+  .gh
+    color: #000080
+    font-weight: bold
+  .gi
+    color: #00A000
+  .go
+    color: #565656
+  .gp
+    color: #c65d09
+    font-weight: bold
+  .gs
+    font-weight: bold
+  .gu
+    color: #800080
+    font-weight: bold
+  .gt
+    color: #0044DD
+  .kc, .kd, .kn
+    color: #008800
+    font-weight: bold
+  .kp
+    color: #003388
+    font-weight: bold
+  .kr
+    color: #008800
+    font-weight: bold
+  .kt
+    color: #333399
+    font-weight: bold
+  .m
+    color: #6600EE
+    font-weight: bold
+  .s
+    color: #008800
+  .na
+    color: #0000CC
+  .nb
+    color: #007020
+  .nc
+    color: #BB0066
+    font-weight: bold
+  .no
+    color: #003366
+    font-weight: bold
+  .nd
+    color: #555555
+    font-weight: bold
+  .ni
+    color: #880000
+    font-weight: bold
+  .ne
+    color: #FF0000
+    font-weight: bold
+  .nf
+    color: #0066BB
+    font-weight: bold
+  .nl
+    color: #997700
+    font-weight: bold
+  .nn
+    color: #0e84b5
+    font-weight: bold
+  .nt
+    color: #007700
+  .nv
+    color: #996633
+  .ow
+    color: #000000
+    font-weight: bold
+  .w
+    color: #bbbbbb
+  .mb, .mf
+    color: #6600EE
+    font-weight: bold
+  .mh
+    color: #005588
+    font-weight: bold
+  .mi
+    color: #0000DD
+    font-weight: bold
+  .mo
+    color: #4400EE
+    font-weight: bold
+  .sa, .sb
+    background-color: #fff0f0
+  .sc
+    color: #0044DD
+  .dl
+    background-color: #fff0f0
+  .sd
+    color: #DD4422
+  .s2
+    background-color: #fff0f0
+  .se
+    color: #666666
+    font-weight: bold
+    background-color: #fff0f0
+  .sh
+    background-color: #fff0f0
+  .si
+    background-color: #eeeeee
+  .sx
+    color: #DD2200
+    background-color: #fff0f0
+  .sr
+    color: #000000
+    background-color: #fff0ff
+  .s1
+    color: #008800
+  .ss
+    color: #AA6600
+  .bp
+    color: #007020
+  .fm
+    color: #0066BB
+    font-weight: bold
+  .vc
+    color: #336699
+  .vg
+    color: #dd7700
+    font-weight: bold
+  .vi
+    color: #3333BB
+  .vm
+    color: #996633
+  .il
+    color: #0000DD
+    font-weight: bold

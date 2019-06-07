@@ -1,0 +1,92 @@
+---
+title: Home
+menu_order: 1
+---
+<div class="row" id="home-top">
+  <div class="col-lg-6">
+    <img id="home-logo" src="img/vce.png">
+    <div id="home-name">
+      Virtual<br>
+      Constellation<br>
+      Engine
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="postit">
+      A cloud framework to emulate line-of-sight, latency, and
+      bandwidth of satellite applications in AWS virtual
+      machines. Performance metrics (CPU, memory, disk, network) are
+      collected from the constellation and recorded in a time series
+      database to analyze performance bottlenecks.
+    </div>
+  </div>
+</div>
+<div class="row" id="home-desc">
+  <div class="col-lg-4">
+    <h2>Motivation</h2>
+    <p>
+      The goal of VCE is to assist in prototyping, development and
+      evaluation of distributed applications running on satellite
+      constellations, airborne systems, and ground stations.
+    </p>
+    <p>
+      Example applications include Earth imaging, marine biology, and
+      ecology studies based on spectral reflectance instruments and
+      infrared imagers and sounders.
+    </p>
+    <p>
+      These missions require autonomous coordination across multiple
+      platforms to capture dynamic events, to combine measurements
+      from different instruments, to transmit preliminary results with
+      low latency, and to perform intelligent instrument utilization
+      for increased lifespan.
+    </p>
+  </div>
+  <div class="col-lg-4">
+    <h2>Approach</h2>
+    <p>
+      Each base station or satellite in the constellation runs as a
+      separate AWS virtual machine.
+    </p>
+    <p>
+      At startup, a VCE agent is installed to control network
+      parameters such as link state (up/down), latency and bandwidth:
+      a VCE server (running on a separate VM) provides these
+      parameters to the VCE agents based on the simulated position of
+      each satellite.
+    </p>
+    <p>
+      In addition, the user can schedule network faults or
+      distruptions, to test the performance of the distributed
+      application under failure.
+    </p>
+    <p>
+      Metrics such as CPU, memory, disk and network usage are
+      collected from each virtual machine over time, and stored in a
+      time series database for real-time or offline analysis.
+    </p>
+  </div>
+  <div class="col-lg-4 ">
+    <h2>News</h2>
+    <ul>
+      <li>
+        Jun. 4, 2019: Version 0.1 of our cloud framework is released
+        as open-source on <a href="https://github.com/isi-rcg/vce">GitHub</a>.
+      </li>
+      <li>
+        Aug. 1, 2019: Our cloud framework is presented at <a href="https://igarss2019.org/Papers/PublicSessionIndex3.asp?Sessionid=1185">IGARSS 2019</a> in
+        Yokohama, Japan.
+      </li>
+    </ul>
+    <p>
+      <p class="text-center mt-5">
+        <img src="{{ '/img/nasa.png' | relative_url }}" class="mb-4" style="width: 50%;">
+        <br>
+        This work is part of the <a href="https://www.isi.edu/projects/scx/overview">SpaceCubeX</a>
+        project supported by the
+        <a href="https://esto.nasa.gov/info_technologies_aist.html">AIST Program</a>
+        of NASA Earth Science Technology Office (ESTO) under grant
+        80NSSC17K0286.
+    </p>
+  </div>
+</div>

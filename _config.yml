@@ -1,0 +1,28 @@
+title: VCE Cloud Framework
+email: paolieri@usc.edu
+description: Virtual Constellation Engine
+baseurl: "/vce"
+
+markdown: kramdown
+theme: minima
+plugins:
+  - jekyll-octicons
+
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - node_modules
+  - vendor/bundle/
+  - vendor/cache/
+  - vendor/gems/
+  - vendor/ruby/
+
+timezone: America/Los_Angeles
+
+defaults:
+  -
+    scope:
+      path: ""
+      type: "pages"
+    values:
+      layout: "default"
