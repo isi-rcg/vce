@@ -1,0 +1,45 @@
+system:
+  awscli: 'aws'                          # local command for AWS cli
+  stackname: vce                         # AWS cloudformation stack name, instance tags
+  zone: us-east-1a                       # AWS zone where instances are started
+  keyname: paolieri                      # SSH key associated with instances
+  server:                                # configuration for the VCE server
+    hostname: vce                        #   hostname
+    type: c4.4xlarge                     #   VM type
+    ami: ami-03cda496313a376d1           #   VM image
+    snap: snap-0739b73d32e1adb19         #   data partition snapshot
+    user: centos                         #   VM username
+  db:                                    # configuration of timeseries db (InfluxDB)
+    name: vce
+    host: vce
+    port: 8086
+  orbits:
+    start: 2019-02-15 13:50:00           # UTC, start time of orbits simulation
+    step: 1.0                            # in minutes, frequency of orbits recalculation
+    duration: 30.0                       # in minutes (orbit simulation stopped afterward)
+  agent_interval: 0.5                    # in seconds, frequency of VM agent polling VCE server
+  metrics_interval: 2.0                  # in seconds, frequency of collected metrics
+  start_delay: 2                         # as integer minutes, delay before running instance cmd
+
+satellites:
+  - hostname: iss
+    type: c4.4xlarge
+    ami: ami-03cda496313a376d1
+    snap: snap-0739b73d32e1adb19
+    user: centos
+    cmd: |
+      echo Running ping sequence...
+      fping -l -p 15000 -D arlington
+    tle1: '1 25544U 98067A   19040.02956382  .00000286  00000-0  11897-4 0  9995'
+    tle2: '2 25544  51.6414 278.5526 0005375   9.1011 131.7761 15.53240808155340'
+
+stations:
+  - hostname: arlington
+    type: c4.4xlarge
+    ami: ami-03cda496313a376d1
+    snap: snap-0739b73d32e1adb19
+    user: centos
+    cmd: ''
+    lat: 38.882737
+    lon: -77.105993
+    alt: 78.0

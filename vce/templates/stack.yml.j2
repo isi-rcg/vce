@@ -1,0 +1,428 @@
+{%- set hostnames = [server['hostname']] -%}
+{%- for node in nodes -%}{%- do hostnames.append(node['hostname']) -%}{%- endfor -%}
+{%- set hostnames = hostnames | join(' ') -%}
+---
+# Copyright 2019 Marco Paolieri
+#
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Constellation VMs with Amazon Linux
+Parameters:
+  Zone:
+    Type: AWS::EC2::AvailabilityZone::Name
+    Default: '{{ system['zone'] }}'
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Default: '{{ system['keyname'] }}'
+  Config:
+    Type: String
+    Default: |
+      {%- for line in config.strip('\n').split('\n') %}
+      {{ line }}
+      {%- endfor %}
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: {{ system['ip_range'] }}
+      EnableDnsSupport: true
+      EnableDnsHostnames: false
+      InstanceTenancy: default
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+  VPCGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+  Subnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Ref Zone
+      CidrBlock: {{ system['ip_range'] }}
+      MapPublicIpOnLaunch: true
+  RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+  SubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref Subnet
+      RouteTableId: !Ref RouteTable
+  InternetRoute:
+    Type: AWS::EC2::Route
+    DependsOn: VPCGatewayAttachment
+    Properties:
+      RouteTableId: !Ref RouteTable
+      DestinationCidrBlock: '0.0.0.0/0'
+      GatewayId: !Ref InternetGateway
+  NetworkAcl:
+    Type: AWS::EC2::NetworkAcl
+    Properties:
+      VpcId: !Ref VPC
+  SubnetNetworkAclAssociation:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      SubnetId: !Ref Subnet
+      NetworkAclId: !Ref NetworkAcl
+  NetworkAclEntryAllowIn:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NetworkAcl
+      Egress: false
+      RuleNumber: 99
+      Protocol: -1
+      CidrBlock: '0.0.0.0/0'
+      RuleAction: allow
+  NetworkAclEntryAllowOut:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NetworkAcl
+      Egress: true
+      RuleNumber: 99
+      Protocol: -1
+      CidrBlock: '0.0.0.0/0'
+      RuleAction: allow
+  VCESecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref VPC
+      GroupDescription: Virtual Constellation
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '22'
+          ToPort: '22'
+          CidrIp: '0.0.0.0/0'
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: '0.0.0.0/0'
+  SameGroupIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref VCESecurityGroup
+      IpProtocol: -1
+      SourceSecurityGroupId: !Ref VCESecurityGroup
+
+  {{ server['hostname'].capitalize() }}Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: '{{ server['type'] }}'
+      ImageId: '{{ server['ami'] }}'
+      KeyName: '{{ system['keyname'] }}'
+      PrivateIpAddress: '{{ server['ip'] }}'
+      SubnetId: !Ref Subnet
+      SecurityGroupIds: [!Ref VCESecurityGroup]
+      Monitoring: true
+      BlockDeviceMappings:
+        - DeviceName: '/dev/sda1'
+          Ebs:
+            VolumeSize: 80
+            VolumeType: gp2
+            DeleteOnTermination: true
+        - DeviceName: '/dev/sdb'
+          Ebs:
+            VolumeSize: 10
+            VolumeType: gp2
+            SnapshotId: '{{ server['snap'] }}'
+            DeleteOnTermination: true
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          LABEL=`cat /etc/fstab | grep home | sed 's/ .*//' | sed 's/LABEL=//'`
+          DEV=`blkid | grep "$LABEL" | sed 's/:.*//'`
+          resize2fs $DEV
+          yum install -y 'https://dl.grafana.com/oss/release/grafana-6.2.1-1.x86_64.rpm'
+          yum install -y 'https://dl.influxdata.com/influxdb/releases/influxdb-1.7.6.x86_64.rpm'
+          systemctl start influxdb
+          systemctl start grafana-server
+          STACK_REGION="--stack ${AWS::StackName} --region ${AWS::Region}"
+          RESOURCE="--resource {{ server['hostname'].capitalize() }}Instance"
+          /opt/aws/bin/cfn-init -v $STACK_REGION $RESOURCE
+          /opt/aws/bin/cfn-signal -e $? $STACK_REGION $RESOURCE
+          cd /home/{{ server['user'] }}
+          sudo -u {{ server['user'] }} bash -c 'bash setup.sh > setup.log 2>&1'
+    CreationPolicy:
+      ResourceSignal:
+        Count: 1        # sent by cfn-signal
+        Timeout: PT10M  # PT{hours}H{minutes}M{seconds}S
+    Metadata:
+      AWS::CloudFormation::Init:
+        config:  # packages, groups, users, sources, files, commands, services
+          packages:  # no order
+            yum:
+              collectd: ''
+              at: ''
+              proj-devel: ''
+              geos-devel: ''
+          files:
+            '/home/{{ server['user'] }}/setup.sh':
+              content: |
+                export PATH=~/.local/bin:/usr/local/bin:$PATH; cd ~
+                wget vce-framework.s3.amazonaws.com/vce.tar
+                tar xf vce.tar
+                cd vce
+                python3.7 -m pip install pipenv --user --upgrade
+                pipenv install
+                pipenv run python -m vce db reset ../config.yml
+                pipenv run python -m vce orbits compute ../config.yml
+                cd ..
+                NOW=`date +%s`; DELAY={{ system['start_delay'] }}
+                START=$((NOW-NOW%(DELAY*60)+DELAY*60))
+                START=`date --date="@$START" '+%Y%m%d%H%M'`
+                echo 'bash cmd.sh > cmd.out 2>&1' | at -t $START
+              mode: '000644'
+              owner: {{ server['user'] }}
+              group: {{ server['user'] }}
+            '/home/{{ server['user'] }}/cmd.sh':
+              content: |
+                export PATH=~/.local/bin:/usr/local/bin:$PATH; cd ~/vce
+                pipenv run python -m vce server run ../config.yml >> ../vce.out 2>&1 &
+                cd ..
+              mode: '000644'
+              owner: {{ server['user'] }}
+              group: {{ server['user'] }}
+            '/home/{{ server['user'] }}/config.yml':
+              content: !Ref Config
+              mode: '000644'
+              owner: {{ server['user'] }}
+              group: {{ server['user'] }}
+            '/etc/hosts':
+              content: !Sub |
+                127.0.0.1 localhost localhost.localdomain localhost4 localhost4.localdomain4
+                ::1       localhost localhost.localdomain localhost6 localhost6.localdomain6
+                {{ server['ip'] }} {{ server['hostname'] }}
+                {%- for node in nodes %}
+                {{ node['ip'] }} {{ node['hostname'] }}
+                {%- endfor %}
+              mode: '000644'
+              owner: root
+              group: root
+            '/etc/influxdb/influxdb.conf':
+              content: !Sub |
+                reporting-disabled = true
+                [meta]
+                  dir = "/var/lib/influxdb/meta"
+                [data]
+                  dir = "/var/lib/influxdb/data"
+                  wal-dir = "/var/lib/influxdb/wal"
+                [[collectd]]
+                  enabled = true
+                  bind-address = ":25826"
+                  database = "{{ system['db']['name'] }}"
+                  retention-policy = ""
+                  typesdb = "/usr/share/collectd"
+                  batch-size = 5000
+                  batch-pending = 10
+                  batch-timeout = "1s"
+                  read-buffer = 0
+                  parse-multivalue-plugin = "join"
+              mode: '000644'
+              owner: root
+              group: root
+          commands:  # in alphabetical order
+            hostname:
+              command: sudo hostnamectl set-hostname {{ system['server']['hostname'] }}
+            udp1:
+              command: sudo sysctl -w net.core.rmem_max=26214400
+            udp2:
+              command: sudo sysctl -w net.core.rmem_default=26214400
+          services:
+            sysvinit:
+              chronyd:
+                enabled: true
+                ensureRunning: true
+              # influxdb:
+              #   enabled: true
+              #   ensureRunning: true
+              # grafana-server:
+              #   enabled: true
+              #   ensureRunning: true
+{% for node in nodes -%}
+{%- set hostname = node['hostname'] %}
+  {{ hostname.capitalize() }}Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: '{{ node['type'] }}'
+      ImageId: '{{ node['ami'] }}'
+      KeyName: '{{ system['keyname'] }}'
+      PrivateIpAddress: '{{ node['ip'] }}'
+      SubnetId: !Ref Subnet
+      SecurityGroupIds: [!Ref VCESecurityGroup]
+      Monitoring: true
+      BlockDeviceMappings:
+        - DeviceName: '/dev/sda1'
+          Ebs:
+            VolumeSize: 80
+            VolumeType: gp2
+            DeleteOnTermination: true
+        - DeviceName: '/dev/sdb'
+          Ebs:
+            VolumeSize: 10
+            VolumeType: gp2
+            SnapshotId: '{{ node['snap'] }}'
+            DeleteOnTermination: true
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          LABEL=`cat /etc/fstab | grep home | sed 's/ .*//' | sed 's/LABEL=//'`
+          DEV=`blkid | grep "$LABEL" | sed 's/:.*//'`
+          resize2fs $DEV
+          STACK_REGION="--stack ${AWS::StackName} --region ${AWS::Region}"
+          RESOURCE="--resource {{ node['hostname'].capitalize() }}Instance"
+          /opt/aws/bin/cfn-init -v $STACK_REGION $RESOURCE
+          /opt/aws/bin/cfn-signal -e $? $STACK_REGION $RESOURCE
+          cd /home/{{ node['user'] }}
+          sudo -u {{ node['user'] }} bash -c 'bash setup.sh > setup.log 2>&1'
+    CreationPolicy:
+      ResourceSignal:
+        Count: 1        # sent by cfn-signal
+        Timeout: PT10M  # PT{hours}H{minutes}M{seconds}S
+    Metadata:
+      AWS::CloudFormation::Init:
+        config:  # packages, groups, users, sources, files, commands, services
+          packages:  # no order
+            yum:
+              at: ''
+              fping: ''
+              collectd: ''
+              collectd-ping: ''
+              proj-devel: ''
+              geos-devel: ''
+          files:
+            '/home/{{ node['user'] }}/setup.sh':
+              content: |
+                export PATH=~/.local/bin:/usr/local/bin:$PATH; cd ~
+                python3.7 -m pip install tcconfig --user --upgrade
+                sudo setcap cap_net_admin+ep /sbin/tc
+                wget vce-framework.s3.amazonaws.com/vce.tar
+                tar xf vce.tar
+                cd vce
+                python3.7 -m pip install pipenv --user --upgrade
+                pipenv install
+                cd ..
+                NOW=`date +%s`; DELAY={{ system['start_delay'] }}
+                START=$((NOW-NOW%(DELAY*60)+DELAY*60))
+                START=`date --date="@$START" '+%Y%m%d%H%M'`
+                bash -c "echo 'bash cmd.sh > cmd.out 2>&1' | at -t $START"
+              mode: '000644'
+              owner: {{ node['user'] }}
+              group: {{ node['user'] }}
+            '/home/{{ node['user'] }}/cmd.sh':
+              content: |
+                export PATH=~/.local/bin:/usr/local/bin:$PATH; cd ~/vce
+                pipenv run python -m vce agent run ../config.yml >> ../vce.out 2>&1 &
+                cd ..
+                {%- for line in node['cmd'].strip('\n').split('\n') %}
+                {{ line }}
+                {%- endfor %}
+              mode: '000644'
+              owner: {{ node['user'] }}
+              group: {{ node['user'] }}
+            '/home/{{ node['user'] }}/config.yml':
+              content: !Ref Config
+              mode: '000644'
+              owner: {{ node['user'] }}
+              group: {{ node['user'] }}
+            '/etc/hosts':
+              content: !Sub |
+                127.0.0.1 localhost localhost.localdomain localhost4 localhost4.localdomain4
+                ::1       localhost localhost.localdomain localhost6 localhost6.localdomain6
+                {{ server['ip'] }} {{ server['hostname'] }}
+                {%- for node in nodes %}
+                {{ node['ip'] }} {{ node['hostname'] }}
+                {%- endfor %}
+              mode: '000644'
+              owner: root
+              group: root
+            '/etc/collectd.conf':
+              content: !Sub |
+                FQDNLookup false
+                Interval {{ system['metrics_interval'] }}
+
+                LoadPlugin syslog
+                <Plugin syslog>
+                  LogLevel info
+                </Plugin>
+
+                LoadPlugin network
+                <Plugin network>
+                  Server "{{ server['hostname'] }}" "25826"
+                  MaxPacketSize 1452
+                  ReportStats false
+                </Plugin>
+
+                LoadPlugin ping
+                <Plugin ping>
+                  Host "{{ server['hostname'] }}"
+                  {%- for node in nodes %}
+                  Host "{{ node['hostname'] }}"
+                  {%- endfor %}
+                  Interval 1.0
+                  Timeout 0.9
+                  TTL 255
+                </Plugin>
+
+                LoadPlugin cpu
+                <Plugin cpu>
+                  ReportByCpu false
+                  ReportByState false
+                  ValuesPercentage true
+                </Plugin>
+
+                LoadPlugin memory
+                LoadPlugin interface
+                LoadPlugin df
+                <Plugin df>
+                  FSType rootfs
+                  FSType sysfs
+                  FSType proc
+                  FSType devtmpfs
+                  FSType devpts
+                  FSType tmpfs
+                  FSType fusectl
+                  FSType cgroup
+                  IgnoreSelected true
+                </Plugin>
+                LoadPlugin disk
+              mode: '000644'
+              owner: root
+              group: root
+          commands:  # in alphabetical order
+            hostname:
+              command: sudo hostnamectl set-hostname {{ hostname }}
+              cwd: /home/centos
+          services:
+            sysvinit:
+              chronyd:
+                enabled: true
+                ensureRunning: true
+              collectd:
+                enabled: true
+                ensureRunning: true
+{% endfor %}
+Outputs:
+  StackName:
+    Value: !Sub '${AWS::StackName}'
+  VPC:
+    Value: !Ref VPC
+  Subnet:
+    Value: !Ref Subnet
+  RouteTable:
+    Value: !Ref RouteTable
+  {{ server['hostname'].capitalize() }}Instance:
+    Value: !Ref {{ server['hostname'].capitalize() }}Instance
+  {{ server['hostname'].capitalize() }}PublicIp:
+    Value: !GetAtt {{ server['hostname'].capitalize() }}Instance.PublicIp
+  {{ server['hostname'].capitalize() }}PrivateIp:
+    Value: !GetAtt {{ server['hostname'].capitalize() }}Instance.PrivateIp
+{%- for node in nodes -%}
+{%- set hostname = node['hostname'].capitalize() -%}
+{%- set instance = hostname + 'Instance' %}
+  {{ instance }}:
+    Value: !Ref {{ instance }}
+  {{ hostname }}PublicIp:
+    Value: !GetAtt {{ instance }}.PublicIp
+  {{ hostname }}PrivateIp:
+    Value: !GetAtt {{ instance }}.PrivateIp
+{%- endfor -%}

@@ -1,0 +1,37 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+requests = "*"
+click = "*"
+tcconfig = "*"
+netifaces = "*"
+strictyaml = "*"
+influxdb = "*"
+skyfield = "*"
+cython = "*"
+numpy = "*"
+matplotlib = "==3.0.3"
+scipy = "*"
+pyqt5 = "*"
+jinja2 = "*"
+responder = "*"
+
+[dev-packages]
+Cartopy = "*"
+pytest-cov = "*"
+pytest = "*"
+pytest-benchmark = "*"
+jedi = "*"
+autopep8 = "*"
+flake8 = "*"
+yapf = "*"
+pudb = "*"
+sphinx = "*"
+sphinx-rtd-theme = "*"
+shiv = "*"
+
+[requires]
+python_version = "3.7"
