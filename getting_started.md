@@ -55,8 +55,8 @@ system:
   server:                                # configuration for the VCE server
     hostname: vce                        #   hostname
     type: c4.4xlarge                     #   VM type
-    ami: ami-03cda496313a376d1           #   VM image
-    snap: snap-0739b73d32e1adb19         #   data partition snapshot
+    ami: ami-0bd0790a4f69961da           #   VM image
+    snap: snap-000e53be3d99a21c1         #   data partition snapshot
     user: centos                         #   VM username
   db:                                    # configuration of timeseries db (InfluxDB)
     name: vce
@@ -73,8 +73,8 @@ system:
 satellites:
   - hostname: iss
     type: c4.4xlarge
-    ami: ami-03cda496313a376d1
-    snap: snap-0739b73d32e1adb19
+    ami: ami-0bd0790a4f69961da
+    snap: snap-000e53be3d99a21c1
     user: centos
     cmd: |
       echo Running ping sequence...
@@ -85,8 +85,8 @@ satellites:
 stations:
   - hostname: arlington
     type: c4.4xlarge
-    ami: ami-03cda496313a376d1
-    snap: snap-0739b73d32e1adb19
+    ami: ami-0bd0790a4f69961da
+    snap: snap-000e53be3d99a21c1
     user: centos
     cmd: ''
     lat: 38.882737
@@ -97,7 +97,7 @@ stations:
 Three VMs will be started: one for the satellite node `iss`, one for
 the ground station `arlington`, and one for the VCE server `vce`.  For
 simplicity, we are using the same VM type (`c4.4xlarge`) and AMI
-(`ami-03cda496313a376d1`) for all nodes.
+(`ami-0bd0790a4f69961da`) for all nodes.
 
 The framework will automate several tasks:
 - It will install VCE on all VMs.
