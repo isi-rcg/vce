@@ -173,7 +173,7 @@ $ vce orbits animate config.yml --interactive orbits.gif
 
 ## Running on AWS
 
-VCE leverages [AWS CloudFormation](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-whatis-concepts.html) to makes it easy to configure,
+VCE leverages [AWS CloudFormation](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-whatis-concepts.html) to make it easy to configure,
 start and stop several VM instances.  You can generate a YML
 CloudFormation template using VCE:
 
